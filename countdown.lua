@@ -21,20 +21,22 @@ local numbers = {
    [string.byte("8")] = "8.png",
    [string.byte("9")] = "9.png",
    [string.byte(" ")] = "space.png",
+   [string.byte(":")] = "colon.png",
+   [string.byte("s")] = "s.png",
 }
 
 -- score components
-local theScoreGroup = display.newGroup()
+local theTimeGroup = display.newGroup()
 local theBackground = display.newImage( "timerbg.png");
 local theBackgroundBorder = 10
 
-theScoreGroup:insert( theBackground )
+theTimeGroup:insert( theBackground )
 
 local numbersGroup = display.newGroup()
-theScoreGroup:insert( numbersGroup )
+theTimeGroup:insert( numbersGroup )
 
--- the current score
-local theScore = 0
+-- the remaining time in seconds
+local theTime = 0
 
 -- the location of the score image
 
@@ -42,9 +44,9 @@ local theScore = 0
 -- 		params.x <= X location of the score
 -- 		params.y <= Y location of the score
 function init( params )
-   theScoreGroup.x = params.x
-   theScoreGroup.y = params.y
-   setScore( 0 )
+   theTimeGroup.x = params.x
+   theTimeGroup.y = params.y
+   setTime( 0 )
 end
 
 -- retrieve score panel info
@@ -57,13 +59,13 @@ end
 --		result.score <= current score
 function getInfo()
    return {
-      x = theScoreGroup.x,
-      y = theScoreGroup.y,
-      xmax = theScoreGroup.x + theScoreGroup.contentWidth,
-      ymax = theScoreGroup.y + theScoreGroup.contentHeight,
-      contentWidth = theScoreGroup.contentWidth,
-      contentHeight = theScoreGroup.contentHeight,
-      score = theScore
+      x = theTimeGroup.x,
+      y = theTimeGroup.y,
+      xmax = theTimeGroup.x + theTimeGroup.contentWidth,
+      ymax = theTimeGroup.y + theTimeGroup.contentHeight,
+      contentWidth = theTimeGroup.contentWidth,
+      contentHeight = theTimeGroup.contentHeight,
+      time = theTime
 	  }
 end
 
@@ -71,25 +73,25 @@ end
 -- this is called by setScore, so normally this should not be called
 function update()
    -- remove old numerals
-   theScoreGroup:remove(2)
+   theTimeGroup:remove(2)
 
    local numbersGroup = display.newGroup()
-   theScoreGroup:insert( numbersGroup )
+   theTimeGroup:insert( numbersGroup )
 
    -- go through the score, right to left
-   local scoreStr = tostring( theScore )
+   local timeStr = tostring( theTime .. "s" )
 
-   local scoreLen = string.len( scoreStr )
+   local timeLen = string.len( timeStr )
    local i = 1;
 
    -- starting location is on the right. notice the digits will be centered on the background
    local x = 45+theBackgroundBorder;
    --local x = theScoreGroup.contentWidth;
-   local y = theScoreGroup.contentHeight / 2
+   local y = theTimeGroup.contentHeight / 2
 
-   while i <= scoreLen do
+   while i <= timeLen do
       -- fetch the digit
-      local c = string.byte( scoreStr, i )
+      local c = string.byte( timeStr, i )
       local digitPath = numbers[c]
       local characterImage = display.newImageRect( digitPath, 48, 88 )
 
@@ -107,14 +109,14 @@ function update()
 end
 
 -- get current score
-function getScore()
-   return theScore
+function getTime()
+   return theTime
 end
 
 -- set score to value
 --	score <= score value
-function setScore( score )
-   theScore = score
+function setTime( time )
+   theTime = time
    
    update()
 end

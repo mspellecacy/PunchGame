@@ -1,51 +1,45 @@
-----------------------------------------------------------------------------------
---
--- scenetemplate.lua
---
-----------------------------------------------------------------------------------
+--> Load Storyboard 
+local storyboard = require( "storyboard" );
+local scene = storyboard.newScene();
 
-local storyboard = require( "storyboard" )
-local scene = storyboard.newScene()
-local ads = require "ads"
+--> Load Ads 
+local ads = require "ads";
 
-
+--> Load Ice
+require "ice";
 
 require "sprite";
 require "audio";
 local math = require("math");
 local physics = require("physics");
 
-display.setStatusBar(display.HiddenStatusBar)
+display.setStatusBar(display.HiddenStatusBar);
 
 --> Variable Setup
 ----------------------
 local DEBUG = false;
 local physRunning = true;
-local audioRunning = true;
+--local audioRunning = true;
 local cX = display.viewableContentWidth;
 local cY = display.viewableContentHeight;
 local cCX = cX / 2;
 local cCY = cY / 2;
 local rand = math.random;
-local impactMult = 1000;
+local impactMult = 1000; -- impact multiplier
+local gameLen = 60; -- Game length in seconds
+local settings = ice:loadBox("settings");
+settings:enableAutomaticSaving();
+--settings:storeIfNew("audioRunning", true);
+local audioRunning = settings:retrieve("audioRunning");
+local highScore = ice:loadBox("highscore");
+local curHS = highScore:retrieve("highscore");
+highScore:storeIfNew("highscore", 0);
+highScore:enableAutomaticSaving();
 
-
-----------------------------------------------------------------------------------
--- 
---	NOTE:
---	
---	Code outside of listener functions (below) will only be executed once,
---	unless storyboard.removeScene() is called.
--- 
----------------------------------------------------------------------------------
-
----------------------------------------------------------------------------------
--- BEGINNING OF YOUR IMPLEMENTATION
----------------------------------------------------------------------------------
 
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
-   local group = self.view
+   local group = self.view;
 
    --> Game Objects setup
    -------------------------
@@ -143,15 +137,18 @@ function scene:createScene( event )
 
    local sndBtn = sprite.newSprite(sndBtnSet);
    sndBtn:prepare("toggle");
-   sndBtn.currentFrame = 2;
+   if(audioRunning) then
+      sndBtn.currentFrame = 2;
+   else
+      sndBtn.currentFrame = 1;
+   end
    sndBtn:setReferencePoint(display.BottomLeftReferencePoint);
    sndBtn.alpha = 0.25;
    sndBtn.x = 0;
    sndBtn.y = cY;
    group:insert(sndBtn);
 
-   --> Start Game
-   ------------------
+
    --> Print out some environment info..
    print("\tX: " .. cX);
    print("\tY: " .. cY);
@@ -214,6 +211,10 @@ function scene:createScene( event )
    
    --> Makes the impact all pretty (Shooting Stars!)
    local function doImpact(hitLoc)
+      if hitLoc.y > cY then
+	 -- This fixes a a bug with letter boxing and stars getting 'stuck' on screen.
+	 hitLoc.y = cY-1;
+      end
       --> Build some stars
       for i=1,10,1 do 
 	 stars[i] = display.newImageRect("star.png", 45, 45);
@@ -260,11 +261,11 @@ function scene:createScene( event )
    --> Sets the head back to a state of waiting to be hit (from crying)
    function resetHead( event )
       tScore = score.getScore();
-      if (tScore > 225000) then
+      if (tScore > 150000) then
 	 head.currentFrame=5;
-      elseif (tScore > 150000) then
+      elseif (tScore > 100000) then
 	 head.currentFrame=4;
-      elseif(tScore > 75000) then
+      elseif(tScore > 25000) then
 	 head.currentFrame=3;
       else
 	 head.currentFrame=1;
@@ -272,12 +273,25 @@ function scene:createScene( event )
    end
 
    --> Blast that bitch in the face with fist!
-   local function blast(velocity)
+   function blast(velocity, hitLocX)
       head.currentFrame = 2;
-      head:applyLinearImpulse(velocity,velocity, head.x, head.y);
 
+      -- Hit on Left or Right?
+      xVel = velocity;
+      if (hitLocX > cCX) then
+	 xVel = (xVel * -1);
+      end
+
+      head:applyLinearImpulse(velocity,xVel, head.x, head.y);
+      
       if (audioRunning) then
-	 media.playEventSound( hitSound1 );
+	 --> Cheap and dirty, need to make this more robust.
+	 hitSnd = rand(1,2);
+	 if (hitSnd == 1) then
+	    media.playEventSound( hitSound1 );
+	 elseif (hitSnd == 2) then
+	    media.playEventSound( hitSound2 );
+	 end
       end
 
       timer.performWithDelay(2000, resetHead);
@@ -364,7 +378,7 @@ function scene:createScene( event )
 	 --> glove:dispose();
 	 --> Need an impact velocity multiplier
 	 doScore(velocity*impactMult);
-	 blast(velocity*impactMult);
+	 blast((velocity*impactMult), hitLoc.x);
       end
 
       --myCircle:setLinearVelocity(50000, 50000);
@@ -443,10 +457,88 @@ function scene:createScene( event )
       if audioRunning then
 	 sndBtn.currentFrame = 1;
 	 audioRunning = false;
+	 settings:store("audioRunning", audioRunning);
+	 settings:save();
       else
 	 sndBtn.currentFrame = 2;
 	 audioRunning = true;
+	 settings:store("audioRunning", audioRunning);
+	 settings:save();
       end
+   end
+
+   function updateTime()
+      if (countdown.getTime() > 0) then
+	 countdown.setTime(countdown.getTime() - 1);
+      elseif (countdown.getTime() == 0) then
+	 stopGame();
+	 resetGame();
+      end
+   end;
+
+   function startGame(event)
+      -- Remove the tap listener, we dont need it while the game is running
+      Runtime:removeEventListener("tap",startGame);
+
+      destroyOverlay();
+      -- Add the touch listener for swingEvents (basically starts listening for everything)
+      Runtime:addEventListener("touch",swingEvent);
+
+      -- Start up the game timer
+      countdownTimer = timer.performWithDelay( 1000, updateTime, -1 )
+
+   end
+
+   function stopGame()
+      -- Remove swing event listener (stops the game basically)
+      timer.cancel(countdownTimer);
+      if(audioRunning)then
+	 media.playEventSound(finishGroan);
+      end
+      Runtime:removeEventListener("touch",swingEvent);
+      
+   end
+
+   function resetGame()
+      highScore:storeIfHigher("highscore", score.getScore());
+      highScore:save();
+      buildOverlay();
+      score.setScore(0);
+      countdown.setTime(gameLen);
+      Runtime:addEventListener("tap",startGame);
+   end
+   
+   function buildOverlay()
+      --> Notify user that they need to tap the screen to start palying...
+      tapToStart = display.newText("Tap To Start!", -5000, -5000, native.systemFontBold, 96);
+      tapToStart:setReferencePoint(display.CenterReferencePoint);
+      tapToStart:setTextColor(255,255,255);
+      tapToStart.x = cCX;
+      tapToStart.y = cCY-100;
+      
+      --> Show a highscore label...
+      --.. highScore:retrieve("highscore")
+      highscoreLabel = display.newText("HIGHSCORE" , -5000, -5000, native.systemFontBold, 72);
+      highscoreLabel:setTextColor(126,255,138);
+      highscoreLabel:setReferencePoint(display.CenterReferencePoint);
+      highscoreLabel.x = cCX;
+      highscoreLabel.y = cCY+200;
+      
+      --> Show the current local highscore
+      highscoreValue = display.newText( highScore:retrieve("highscore"),
+					-5000, -5000, native.systemFontBold, 72);
+      highscoreValue:setTextColor(126,255,138);
+      highscoreValue:setReferencePoint(display.CenterReferencePoint);
+      highscoreValue.x = cCX;
+      highscoreValue.y = cCY+275;
+
+   end
+
+
+   function destroyOverlay()
+      tapToStart:removeSelf();
+      highscoreLabel:removeSelf();
+      highscoreValue:removeSelf();
    end
 
    sndBtn:addEventListener("tap",toggleAudio);
@@ -457,7 +549,7 @@ end  -- scene:createScene(event)
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
    local group = self.view
-   
+
    -- remove previous scene's view
    storyboard.purgeScene("scene1");
    
@@ -470,15 +562,11 @@ function scene:enterScene( event )
    --> Game Countdown
    local countdown = require("countdown");
    local cdinfo = countdown.getInfo();
-   countdown.init({ x = (cX - cdinfo.contentWidth), y = 135 });
-   countdown.setScore(0);
-   
-   --> Ads
-   --ads.init( "inmobi", "4028cba63479e2210134e5d544600aac" )  --PunchGame ID
-   --ads.init( "inmobi", "4028cb962895efc50128fc99d4b7025b" )  --Debug
-   --ads.show( "banner320x48", { x=0, y=100, interval=5, testMode=true } )
+   countdown.init({ x = (cX - cdinfo.contentWidth) - 15, y = 135 });
+   countdown.setTime(gameLen);
 
-   local ads = require "ads"
+   --> Countdown Timer
+   local countdownTimer = {};
  
    -- Example for inneractive:
    --ads.init( "inneractive", "IA_GameTest" )  --Debug
@@ -499,17 +587,21 @@ function scene:enterScene( event )
    --gtimer:insert(gtimerbg);
    --group:insert(gtimer);
 
-
-
    --> Setup the Event Sounds
    hitSound1 = media.newEventSound( "hit_sound1.mp3" );
-   --hitSound2 = media.newEventSound( "sounds/hit_sound2.mp3" );
-   --hitSound3 = media.newEventSound( "sounds/hit_sound3.mp3" );
+   hitSound2 = media.newEventSound( "hit_sound2.mp3" );
+   finishGroan = media.newEventSound( "finish_groan.mp3" );
    --hitRespo1 = media.newEventSound( "sounds/hit_response1.mp3" );
    --hitRespo2 = media.newEventSound( "sounds/hit_response2.mp3" );
    --hitRespo3 = media.newEventSound( "sounds/hit_response3.mp3" );
 
-   Runtime:addEventListener("touch",swingEvent);
+   buildOverlay();
+
+
+   --> Wait for Tap Event to start game.
+   Runtime:addEventListener("tap",startGame);
+   --Runtime:addEventListener("touch",swingEvent);
+
    -----------------------------------------------------------------------------
    
    --	INSERT code here (e.g. start timers, load audio, start listeners, etc.)
