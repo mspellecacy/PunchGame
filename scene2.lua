@@ -1,13 +1,8 @@
 --> Load Storyboard 
 local storyboard = require( "storyboard" );
 local scene = storyboard.newScene();
-
---> Load Ads 
 local ads = require "ads";
-
---> Load Ice
 require "ice";
-
 require "sprite";
 require "audio";
 local math = require("math");
@@ -35,6 +30,22 @@ local highScore = ice:loadBox("highscore");
 local curHS = highScore:retrieve("highscore");
 highScore:storeIfNew("highscore", 0);
 highScore:enableAutomaticSaving();
+
+local sndBtn = {};
+
+local numbers = { 
+   [string.byte("0")] = "0_white.png",
+   [string.byte("1")] = "1_white.png",
+   [string.byte("2")] = "2_white.png",
+   [string.byte("3")] = "3_white.png",
+   [string.byte("4")] = "4_white.png",
+   [string.byte("5")] = "5_white.png",
+   [string.byte("6")] = "6_white.png",
+   [string.byte("7")] = "7_white.png",
+   [string.byte("8")] = "8_white.png",
+   [string.byte("9")] = "9_white.png",
+   [string.byte(" ")] = "space.png",
+}
 
 
 -- Called when the scene's view does not exist:
@@ -94,8 +105,13 @@ function scene:createScene( event )
    body.x = cCX+15;
    body.y = cY+5;
    
- 
-
+   --> Back Button
+   --local backBtn = display.newImageRect("back.png", 96, 96);
+   --group:insert(backBtn);
+   --backBtn:setReferencePoint(display.BottomRightReferencePoint);
+   --backBtn.alpha = .5;
+   --backBtn.x = cX; backBtn.y = cY;
+   
    --------------------------------------------------------------------------------
    ------------
    ------------ SPRITES
@@ -106,7 +122,7 @@ function scene:createScene( event )
    local dataBobble = bobbleData.getSpriteSheetData();
    local bobbleSheet = sprite.newSpriteSheetFromData( "obama_doll.png", dataBobble );
    local bobbleSet = sprite.newSpriteSet(bobbleSheet, 1, 2);
-   sprite.add(bobbleSet, "bobble", 1, 5, 1);
+   sprite.add(bobbleSet, "bobble", 1, 6, 1);
 
    --> Setup the head bottle sprite
    local head = sprite.newSprite(bobbleSet);
@@ -122,6 +138,7 @@ function scene:createScene( event )
 
    --> Setup The Glove
    local glove = sprite.newSprite(gloveSet);
+   --local glove = display.newImageRect("rep_glove.png", 480, 800);
    glove.x = -5000;
    glove.y = -5000;
    --group:insert(glove);
@@ -135,7 +152,7 @@ function scene:createScene( event )
    local sndBtnSet = sprite.newSpriteSet(sndBtnSheet, 1, 2);
    sprite.add(sndBtnSet, "toggle", 1, 2, 1);
 
-   local sndBtn = sprite.newSprite(sndBtnSet);
+   sndBtn = sprite.newSprite(sndBtnSet);
    sndBtn:prepare("toggle");
    if(audioRunning) then
       sndBtn.currentFrame = 2;
@@ -148,6 +165,12 @@ function scene:createScene( event )
    sndBtn.y = cY;
    group:insert(sndBtn);
 
+
+   --------------------------------------------------------------------------------
+   ------------
+   ------------ GAME STUFF
+   ------------
+   --------------------------------------------------------------------------------
 
    --> Print out some environment info..
    print("\tX: " .. cX);
@@ -261,7 +284,9 @@ function scene:createScene( event )
    --> Sets the head back to a state of waiting to be hit (from crying)
    function resetHead( event )
       tScore = score.getScore();
-      if (tScore > 150000) then
+      if (tScore > 250000) then
+	 head.currentFrame=6;
+      elseif (tScore > 150000) then
 	 head.currentFrame=5;
       elseif (tScore > 100000) then
 	 head.currentFrame=4;
@@ -403,6 +428,7 @@ function scene:createScene( event )
       glove.x = hitLoc.x;
       glove.y = hitLoc.y;
       glove.isVisible = true;
+      --timer.performWithDelay(1, killGlove);
       glove:addEventListener("sprite",killGlove);
       glove:play();
    end
@@ -452,7 +478,7 @@ function scene:createScene( event )
       return true;
    end
 
-   -->Stop and start physics for testing purposes.
+
    function toggleAudio(event)
       if audioRunning then
 	 sndBtn.currentFrame = 1;
@@ -474,11 +500,52 @@ function scene:createScene( event )
 	 stopGame();
 	 resetGame();
       end
-   end;
+   end
+
+
+   function showHighscore(thisScore)
+      -- remove old numerals
+      local theBackgroundBorder = 10;
+      local numbersGroup = display.newGroup()
+      hsGroup:insert( numbersGroup )
+      
+      -- go through the score, right to left
+      local scoreStr = tostring(thisScore)
+      
+      local scoreLen = string.len( scoreStr )
+      local i = 1;
+      
+      -- starting location is on the right. notice the digits will be centered on the background
+      --local x = 45+theBackgroundBorder;
+      local x = -145;
+      local y = hsGroup.contentHeight / 2
+      
+      while i <= scoreLen do
+	 -- fetch the digit
+	 local c = string.byte( scoreStr, i )
+	 local digitPath = numbers[c]
+	 local characterImage = display.newImageRect( digitPath, 48, 88 )
+	 
+	 -- put it in the score group
+	 hsGroup:insert( characterImage )
+	 
+	 -- place the digit
+	 characterImage.x = x - characterImage.width / 2
+	 characterImage.y = y
+	 x = x + characterImage.width
+	 
+	 -- 
+	 i = i + 1
+      end
+   end
+
 
    function startGame(event)
+
+      score.setScore(0);
+      head.currentFrame = 1;
       -- Remove the tap listener, we dont need it while the game is running
-      Runtime:removeEventListener("tap",startGame);
+      Runtime:removeEventListener("touch",startGame);
 
       destroyOverlay();
       -- Add the touch listener for swingEvents (basically starts listening for everything)
@@ -490,6 +557,9 @@ function scene:createScene( event )
    end
 
    function stopGame()
+      -- Save score if its higher...
+      highScore:storeIfHigher("highscore", score.getScore());
+      highScore:save();
       -- Remove swing event listener (stops the game basically)
       timer.cancel(countdownTimer);
       if(audioRunning)then
@@ -500,48 +570,48 @@ function scene:createScene( event )
    end
 
    function resetGame()
-      highScore:storeIfHigher("highscore", score.getScore());
-      highScore:save();
       buildOverlay();
-      score.setScore(0);
       countdown.setTime(gameLen);
       Runtime:addEventListener("tap",startGame);
    end
    
    function buildOverlay()
       --> Notify user that they need to tap the screen to start palying...
-      tapToStart = display.newText("Tap To Start!", -5000, -5000, native.systemFontBold, 96);
+      tapToStart = display.newImageRect("tap_button.png", 356, 121);
       tapToStart:setReferencePoint(display.CenterReferencePoint);
-      tapToStart:setTextColor(255,255,255);
       tapToStart.x = cCX;
       tapToStart.y = cCY-100;
       
       --> Show a highscore label...
       --.. highScore:retrieve("highscore")
-      highscoreLabel = display.newText("HIGHSCORE" , -5000, -5000, native.systemFontBold, 72);
-      highscoreLabel:setTextColor(126,255,138);
+      highscoreLabel = display.newImageRect("highscore.png", 464, 168);
+     
       highscoreLabel:setReferencePoint(display.CenterReferencePoint);
       highscoreLabel.x = cCX;
       highscoreLabel.y = cCY+200;
+
       
-      --> Show the current local highscore
-      highscoreValue = display.newText( highScore:retrieve("highscore"),
-					-5000, -5000, native.systemFontBold, 72);
-      highscoreValue:setTextColor(126,255,138);
-      highscoreValue:setReferencePoint(display.CenterReferencePoint);
-      highscoreValue.x = cCX;
-      highscoreValue.y = cCY+275;
+      hsGroup = display.newGroup();
+      hsGroup.x = cCX; hsGroup.y = cCY+235;
+
+      showHighscore(highScore:retrieve("highscore"));
 
    end
-
 
    function destroyOverlay()
       tapToStart:removeSelf();
       highscoreLabel:removeSelf();
-      highscoreValue:removeSelf();
+      hsGroup:removeSelf();
    end
 
-   sndBtn:addEventListener("tap",toggleAudio);
+   function goBack(event)
+      storyboard.gotoScene( "scene1", "fade", 400 );
+      countdownTimer = nil;
+      countdownTimer = {}
+      destroyOverlay();
+   end
+
+
    
 end  -- scene:createScene(event)
 
@@ -549,7 +619,7 @@ end  -- scene:createScene(event)
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
    local group = self.view
-
+   native.setActivityIndicator( false );
    -- remove previous scene's view
    storyboard.purgeScene("scene1");
    
@@ -558,6 +628,7 @@ function scene:enterScene( event )
    local scoreInfo = score.getInfo();
    score.init({ x = 15, y = 135 });
    score.setScore(0);
+   
 
    --> Game Countdown
    local countdown = require("countdown");
@@ -575,17 +646,6 @@ function scene:enterScene( event )
    ads.show( "banner", { x=0, y=0, interval=30 } );
    --ads.show( "fullscreen", { x=0, y=0, interval=60 } )
    --ads.show( "text", { x=0, y=100, interval=60 } )
- 
-
-   --local gtimer = display.newGroup();
-   --local gtimerbg = display.newImageRect("timerbg.png", 175, 80);
-   --gtimerbg:setReferencePoint(display.BottomRightReferencePoint);
-
-   --gtimerbg.x = cX;
-   --gtimerbg.y = 175;
-   --group:insert(gtimerbg);
-   --gtimer:insert(gtimerbg);
-   --group:insert(gtimer);
 
    --> Setup the Event Sounds
    hitSound1 = media.newEventSound( "hit_sound1.mp3" );
@@ -597,9 +657,12 @@ function scene:enterScene( event )
 
    buildOverlay();
 
-
+   
    --> Wait for Tap Event to start game.
-   Runtime:addEventListener("tap",startGame);
+   sndBtn:addEventListener("tap",toggleAudio);
+   tapToStart:addEventListener("touch",startGame);
+   
+   --Runtime:addEventListener("tap", goBack);
    --Runtime:addEventListener("touch",swingEvent);
 
    -----------------------------------------------------------------------------
