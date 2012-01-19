@@ -92,7 +92,7 @@ function scene:createScene( event )
    --------------------------------------------------------------------------------
 
    --> Background
-   local bg = display.newImageRect("background.png", cX+5, cY+5);
+   local bg = display.newImageRect("background.png", cX+5, cY);
    group:insert(bg);
    bg:setReferencePoint(display.CenterReferencePoint);
    bg.x = cCX;
@@ -272,7 +272,7 @@ function scene:createScene( event )
 	 rT.rotation = rand(1,920);
 	 rT.time = rand(145,900);
 	 rT.alpha = 0;
-	 flashRect = display.newRect(0,0,cX,cY);
+	 flashRect = display.newRect(0,0,cX+5,cY+5);
 	 flashRect.alpha = 0.05;
 	 flashRect:setFillColor(255,255,255);
 	 transition.to(flashRect,{time=250, alpha=0});
@@ -543,6 +543,7 @@ function scene:createScene( event )
    function startGame(event)
 
       score.setScore(0);
+
       head.currentFrame = 1;
       -- Remove the tap listener, we dont need it while the game is running
       Runtime:removeEventListener("touch",startGame);
@@ -572,7 +573,7 @@ function scene:createScene( event )
    function resetGame()
       buildOverlay();
       countdown.setTime(gameLen);
-      Runtime:addEventListener("tap",startGame);
+      tapToStart:addEventListener("tap",startGame);
    end
    
    function buildOverlay()
@@ -599,6 +600,7 @@ function scene:createScene( event )
    end
 
    function destroyOverlay()
+      tapToStart:removeEventListener("touch",startGame);
       tapToStart:removeSelf();
       highscoreLabel:removeSelf();
       hsGroup:removeSelf();
@@ -619,7 +621,8 @@ end  -- scene:createScene(event)
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
    local group = self.view
-   native.setActivityIndicator( false );
+
+   --native.setActivityIndicator( false );
    -- remove previous scene's view
    storyboard.purgeScene("scene1");
    

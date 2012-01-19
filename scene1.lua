@@ -19,60 +19,67 @@ local scene = storyboard.newScene()
 ---------------------------------------------------------------------------------
 -- BEGINNING OF YOUR IMPLEMENTATION
 ---------------------------------------------------------------------------------
-local playBtn;
 -- Touch event listener for play button
 local cX = display.viewableContentWidth;
 local cY = display.viewableContentHeight;
 local cCX = cX / 2;
 local cCY = cY / 2;
-
+native.setActivityIndicator( true );
 
 local function killCreditsText(self, event)
    if event.phase == "began" then
-      cText:removeSelf();
+      self:removeSelf();
       return true;
    end
 end
 
 local function onCreditsTouch( self, event )
    if (event.phase == "began") then
-      cText = display.newImageRect("credits_text.png", cX+5, cY+5);
-      cText:setReferencePoint(display.CenterReferencePoint);
-      cText.alpha = 0;
-      cText.x = cCX; cText.y = cCY;
-      cText.touch = killCreditsText;
-      cText:addEventListener("touch", cText);
-      transition.to(cText, {alpha = 1, time=150});
+      self = display.newImageRect("credits_text.png", cX+5, cY+5);
+      self:setReferencePoint(display.CenterReferencePoint);
+      self.alpha = 0;
+      self.x = cCX; self.y = cCY;
+      self.touch = killCreditsText;
+      self:addEventListener("touch", self);
+      transition.to(self, {alpha = 1, time=150});
    end
 end
 
 
 local function killHelpText(self, event)
    if event.phase == "began" then
-      hText:removeSelf();
+      self:removeSelf();
       return true;
    end
 end
 
 local function onHelpTouch( self, event )
    if (event.phase == "began") then
-      hText = display.newImageRect("help_text.png", cX+5, cY+5);
-      hText:setReferencePoint(display.CenterReferencePoint);
-      hText.alpha = 0;
-      hText.x = cCX; hText.y = cCY;
-      hText.touch = killHelpText;
-      hText:addEventListener("touch", hText);
-      transition.to(hText, {alpha = 1, time=150});
+      self = display.newImageRect("help_text.png", cX+5, cY+5);
+      self:setReferencePoint(display.CenterReferencePoint);
+      self.alpha = 0;
+      self.x = cCX; self.y = cCY;
+      self.touch = killHelpText;
+      self:addEventListener("touch", self);
+      transition.to(self, {alpha = 1, time=150});
    end
 end
 
 local function onPlayTouch( self, event )
-   if event.phase == "began" then
-      native.setActivityIndicator( true );
+
+   function nextScene()
       storyboard.gotoScene( "scene2", "fade", 400  );
+   end
+   
+   if event.phase == "began" then
+      self:setFillColor(150, 150, 150);
+      timer.performWithDelay(75, nextScene);
+      --native.setActivityIndicator( true );
       return true
    end
 end
+
+
 
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
@@ -137,6 +144,8 @@ end
 -- Called immediately after scene has moved onscreen:
 function scene:enterScene( event )
 	local group = self.view
+
+	native.setActivityIndicator( false );
 
 	playBtn:addEventListener("touch", playBtn );
 	helpBtn:addEventListener("touch", helpBtn );
