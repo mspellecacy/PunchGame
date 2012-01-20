@@ -32,6 +32,8 @@ highScore:storeIfNew("highscore", 0);
 highScore:enableAutomaticSaving();
 
 local sndBtn = {};
+local backBtn = {};
+
 
 local numbers = { 
    [string.byte("0")] = "0_white.png",
@@ -106,12 +108,12 @@ function scene:createScene( event )
    body.y = cY+5;
    
    --> Back Button
-   --local backBtn = display.newImageRect("back.png", 96, 96);
+   --backBtn = display.newImageRect("back.png", 96, 96);
    --group:insert(backBtn);
    --backBtn:setReferencePoint(display.BottomRightReferencePoint);
-   --backBtn.alpha = .5;
+   --backBtn.alpha = .25;
    --backBtn.x = cX; backBtn.y = cY;
-   
+
    --------------------------------------------------------------------------------
    ------------
    ------------ SPRITES
@@ -206,7 +208,7 @@ function scene:createScene( event )
    group:insert(head);
    group:insert(glove); -- Have to insert glove after head so it shows up.
 
-   physics.addBody( head, { density=0.2, friction=0.05, bounce=.95, radius=125 });
+   physics.addBody( head, { density=0.2, friction=0.05, bounce=.95, radius=145 });
 
    --> Setup the main pivot joint
    mainJoint = physics.newJoint("pivot", head, floor, cCX, head.y+200);
@@ -600,17 +602,19 @@ function scene:createScene( event )
    end
 
    function destroyOverlay()
-      tapToStart:removeEventListener("touch",startGame);
-      tapToStart:removeSelf();
-      highscoreLabel:removeSelf();
-      hsGroup:removeSelf();
+      display.remove(tapToStart);
+      display.remove(highscoreLabel);
+      display.remove(hsGroup);
+      
+
+      return true;
    end
 
    function goBack(event)
-      storyboard.gotoScene( "scene1", "fade", 400 );
-      countdownTimer = nil;
-      countdownTimer = {}
       destroyOverlay();
+      timer.cancel(countdownTimer);
+      storyboard.gotoScene( "scene1", "slideRight", 400 );
+      
    end
 
 
@@ -622,7 +626,7 @@ end  -- scene:createScene(event)
 function scene:enterScene( event )
    local group = self.view
 
-   --native.setActivityIndicator( false );
+   native.setActivityIndicator( false );
    -- remove previous scene's view
    storyboard.purgeScene("scene1");
    
@@ -641,7 +645,7 @@ function scene:enterScene( event )
 
    --> Countdown Timer
    local countdownTimer = {};
- 
+   
    -- Example for inneractive:
    --ads.init( "inneractive", "IA_GameTest" )  --Debug
    ads.init( "inneractive", "LeftSquare_PunchGame_Android" );  --PunchGame ID
@@ -664,8 +668,7 @@ function scene:enterScene( event )
    --> Wait for Tap Event to start game.
    sndBtn:addEventListener("tap",toggleAudio);
    tapToStart:addEventListener("touch",startGame);
-   
-   --Runtime:addEventListener("tap", goBack);
+   --backBtn:addEventListener("tap", goBack);
    --Runtime:addEventListener("touch",swingEvent);
 
    -----------------------------------------------------------------------------
@@ -693,7 +696,7 @@ end
 -- Called prior to the removal of scene's "view" (display group)
 function scene:destroyScene( event )
    local group = self.view
-   
+   --destroyOverlay();
    -----------------------------------------------------------------------------
    
    --	INSERT code here (e.g. remove listeners, widgets, save state, etc.)

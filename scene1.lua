@@ -6,6 +6,7 @@
 
 local storyboard = require( "storyboard" )
 local scene = storyboard.newScene()
+require "sprite"
 
 ----------------------------------------------------------------------------------
 -- 
@@ -24,7 +25,23 @@ local cX = display.viewableContentWidth;
 local cY = display.viewableContentHeight;
 local cCX = cX / 2;
 local cCY = cY / 2;
-native.setActivityIndicator( true );
+local playBtn = {};
+--native.setActivityIndicator( true );
+
+--> Setup Loading Sprite
+local loadingData = require "loading";
+local dataLoading = loadingData.getSpriteSheetData();
+local loadingSheet = sprite.newSpriteSheetFromData( "loading.png", dataLoading )
+local loadingSet = sprite.newSpriteSet(loadingSheet, 1, 3)
+local loadingSprite = sprite.newSprite(loadingSet);
+sprite.add(loadingSet, "loading", 1, 3, 300, -2);
+loadingSprite.x = cCX;
+loadingSprite.y = cCY;
+loadingSprite:prepare("loading");
+loadingSprite:play();
+
+
+
 
 local function killCreditsText(self, event)
    if event.phase == "began" then
@@ -68,13 +85,23 @@ end
 local function onPlayTouch( self, event )
 
    function nextScene()
+      loadingSprite.x = cCX;
+      loadingSprite.y = cCY;
+
+
+      --native.setActivityIndicator( true );
       storyboard.gotoScene( "scene2", "fade", 400  );
    end
    
    if event.phase == "began" then
-      self:setFillColor(150, 150, 150);
-      timer.performWithDelay(75, nextScene);
-      --native.setActivityIndicator( true );
+
+
+      self:setFillColor(150);
+
+   --> Setup The Glove
+
+      loadingSprite:play();
+      timer.performWithDelay(50, nextScene);
       return true
    end
 end
@@ -114,6 +141,7 @@ function scene:createScene( event )
 	playBtn:setReferencePoint(display.CenterReferencePoint)
 	playBtn.x = cCX; playBtn.y = cCY+125;
 	playBtn.touch = onPlayTouch;
+	playBtn:setFillColor( 255 );
 	group:insert(playBtn);
 
 	--> Help Button
@@ -131,6 +159,10 @@ function scene:createScene( event )
 	group:insert(creditsBtn);
 
 
+	loadingSprite.x = -5000;
+	loadingSprite.y = -5000;
+
+
 	-----------------------------------------------------------------------------
 		
 	--	CREATE display objects and add them to 'group' here.
@@ -146,7 +178,8 @@ function scene:enterScene( event )
 	local group = self.view
 
 	native.setActivityIndicator( false );
-
+	
+	storyboard.purgeScene("scene2");
 	playBtn:addEventListener("touch", playBtn );
 	helpBtn:addEventListener("touch", helpBtn );
 	creditsBtn:addEventListener("touch", creditsBtn );
@@ -162,7 +195,14 @@ end
 -- Called when scene is about to move offscreen:
 function scene:exitScene( event )
 	local group = self.view
+
+	--titlebg:removeSelf();
+	--playBtn:removeSelf();
+	--helpBtn:removeSelf();
+	--creditsBtn:removeSelf();
 	
+
+
 	-----------------------------------------------------------------------------
 	
 	--	INSERT code here (e.g. stop timers, remove listeners, unload sounds, etc.)
@@ -174,8 +214,9 @@ end
 
 -- Called prior to the removal of scene's "view" (display group)
 function scene:destroyScene( event )
-	local group = self.view
-	
+   local group = self.view
+
+   loadingSprite:removeSelf();
 	-----------------------------------------------------------------------------
 	
 	--	INSERT code here (e.g. remove listeners, widgets, save state, etc.)
