@@ -4,26 +4,26 @@
 application =
    {
 
-   orientation =
+   content =
       {
-      default = "portrait",
-      supported =
-	 {
-	 "portrait",
-	 },
+      fps = 60,
+      width = 640,
+      height = 960,
+      scale = "letterBox",
+      xAlign = "center",
+      yAlign = "center",
       },
-      androidPermissions =
+      orientation =
 	 {
-	 "android.permission.INTERNET",
-	 "android.permission.ACCESS_NETWORK_STATE"
-	 },
-	 content =
+	 default = "portrait",
+	 supported =
 	    {
-	    fps = 60,
-	    width = 640,
-	    height = 960,
-	    scale = "letterBox",
-	    xAlign = "center",
-	    yAlign = "center",
+	    "portrait",
+	    },
+	 },
+	 androidPermissions =
+	    {
+	    "android.permission.INTERNET",
+	    "android.permission.ACCESS_NETWORK_STATE"
 	    },
    }

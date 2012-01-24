@@ -1,0 +1,39 @@
+settings =
+{
+        orientation =
+        {
+	default = "portrait",
+	supported =
+	{
+	"landscapeLeft", "landscapeRight", "portrait", "portraitUpsideDown",
+	}
+        },
+	
+	-- This needs to be "iphone" even if your packaging for "ipad only"
+	-- You would use another "ipad" key for ipad specific settings only.
+	-- Otherwise, you'll need to stick with the "iphone" key as seen here.
+	iphone =
+        {
+	plist =
+	{
+	
+	-- iPad uses "Icon-72.png", but iPhone uses "Icon.png"
+	-- However, we've set up our CFBundleIconFiles (plural) below,
+	-- So the 72 pix icon will get picked up anyway.
+	CFBundleIconFile = "Icon.png",
+	
+	-- The files should be in size-descending order
+	CFBundleIconFiles = {
+	"Icon-72.png",
+	"Icon-Small-50.png", 
+	"Icon-Small.png"
+	},
+	
+	-- When set to TRUE turns off the gloss, 
+	-- but leaves the rounded edges.
+	UIPrerenderedIcon = true,
+	
+	}
+        }
+	
+	}
