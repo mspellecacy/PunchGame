@@ -49,6 +49,54 @@ local numbers = {
    [string.byte(" ")] = "space.png",
 }
 
+local alphabet = {
+   [string.byte("0")] = "0_white.png",
+   [string.byte("1")] = "1_white.png",
+   [string.byte("2")] = "2_white.png",
+   [string.byte("3")] = "3_white.png",
+   [string.byte("4")] = "4_white.png",
+   [string.byte("5")] = "5_white.png",
+   [string.byte("6")] = "6_white.png",
+   [string.byte("7")] = "7_white.png",
+   [string.byte("8")] = "8_white.png",
+   [string.byte("9")] = "9_white.png",
+   [string.byte(" ")] = "space.png",
+   [string.byte("A")] = "A_orangered_ucase.png",
+   [string.byte("B")] = "B_orangered_ucase.png",
+   [string.byte("C")] = "C_orangered_ucase.png",
+   [string.byte("D")] = "D_orangered_ucase.png",
+   [string.byte("E")] = "E_orangered_ucase.png",
+   [string.byte("F")] = "F_orangered_ucase.png",
+   [string.byte("G")] = "G_orangered_ucase.png",
+   [string.byte("H")] = "H_orangered_ucase.png",
+   [string.byte("I")] = "I_orangered_ucase.png",
+   [string.byte("J")] = "J_orangered_ucase.png",
+   [string.byte("K")] = "K_orangered_ucase.png",
+   [string.byte("L")] = "L_orangered_ucase.png",
+   [string.byte("M")] = "M_orangered_ucase.png",
+   [string.byte("N")] = "N_orangered_ucase.png",
+   [string.byte("O")] = "O_orangered_ucase.png",
+   [string.byte("P")] = "P_orangered_ucase.png",
+   [string.byte("Q")] = "Q_orangered_ucase.png",
+   [string.byte("R")] = "R_orangered_ucase.png",
+   [string.byte("S")] = "S_orangered_ucase.png",
+   [string.byte("T")] = "T_orangered_ucase.png",
+   [string.byte("U")] = "U_orangered_ucase.png",
+   [string.byte("V")] = "V_orangered_ucase.png",
+   [string.byte("W")] = "W_orangered_ucase.png",
+   [string.byte("X")] = "X_orangered_ucase.png",
+   [string.byte("Y")] = "Y_orangered_ucase.png",
+   [string.byte("Z")] = "Z_orangered_ucase.png",
+   [string.byte("+")] = "plus_orangered.png",
+   [string.byte("-")] = "minus_orangered.png",
+   [string.byte("_")] = "underscore_orangered.png",
+   [string.byte(".")] = "period_orangered.png",
+   [string.byte(":")] = "colon_orangered.png",
+   [string.byte("!")] = "bang_orangered.png",
+}
+
+
+
 
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
@@ -223,6 +271,48 @@ function scene:createScene( event )
 
    --> Game functions
 
+   function getText(thisScore)
+      local textGroup = display.newGroup();
+      -- remove old numerals
+      local theBackgroundBorder = 10;
+      local numbersGroup = display.newGroup()
+      textGroup:insert( numbersGroup )
+      
+      -- go through the score, right to left
+      local scoreStr = tostring(thisScore)
+      
+      local scoreLen = string.len( scoreStr )
+      local i = 1;
+      
+      -- Starting location is on the right. 
+      -- Notice the digits will be centered on the background
+      --local x = 45+theBackgroundBorder;
+      
+      local x = cCX;
+      local y = cCY;
+      --local x = -145;
+      --local y = hsGroup.contentHeight / 2
+      
+      while i <= scoreLen do
+	 -- fetch the digit
+	 local c = string.byte( scoreStr, i )
+	 local digitPath = alphabet[c]
+	 local characterImage = display.newImageRect( digitPath, 48, 88 )
+	 
+	 -- put it in the score group
+	 textGroup:insert( characterImage )
+	 
+	 -- place the digit
+	 characterImage.x = x - characterImage.width / 2
+	 characterImage.y = y
+	 x = x + characterImage.width
+	 
+	 -- 
+	 i = i + 1
+      end
+      return textGroup;
+   end
+
    local function showTextureMemory()
       print("\t" .. (system.getInfo( "textureMemoryUsed" ) / (1024*1024)) .. "mb");
    end
@@ -284,7 +374,7 @@ function scene:createScene( event )
    end
 
    --> Sets the head back to a state of waiting to be hit (from crying)
-   function resetHead( event )
+   function resetHead()
       tScore = score.getScore();
       if (tScore > 250000) then
 	 head.currentFrame=6;
@@ -309,7 +399,7 @@ function scene:createScene( event )
 	 xVel = (xVel * -1);
       end
 
-      head:applyLinearImpulse(velocity,xVel, head.x, head.y);
+      head:applyLinearImpulse(velocity, xVel, head.x, head.y);
       
       if (audioRunning) then
 	 --> Cheap and dirty, need to make this more robust.
@@ -320,13 +410,67 @@ function scene:createScene( event )
 	    media.playEventSound( hitSound2 );
 	 end
       end
-
-      timer.performWithDelay(2000, resetHead);
+      resetTimer = {};
+      resetTimer = timer.performWithDelay(2000, resetHead);
    end 
+
+   --> Show them how hard they hit!
+   function showImpactScore(velocity, hitLoc)
+      local tHit = (math.round(velocity / 10));
+      if tHit > 0 then
+	 local impactLevel = getText("+"..tHit);
+	 local impactText = "";
+	 local showText = {};
+	 impactLevel:setReferencePoint(display.CenterReferencePoint);
+	 impactLevel.x = hitLoc.x;
+	 impactLevel.y = hitLoc.y;
+	 
+	 local killText2 = function ()
+	    display.remove(showText);
+	 end
+	 
+	 local killText = function ()
+	    display.remove(impactLevel);
+	 end
+	 
+	 if tHit > 2000 then
+	    impactText = "MONSTER HIT!";
+	 elseif tHit > 1500 then
+	    impactText = "BRUTAL HIT!";
+	 elseif tHit > 1000 then
+	    impactText = "EPIC HIT!";
+	 elseif tHit > 500 then
+	    impactText = "GOOD HIT!";
+	 else
+	    impactText = " ";
+	 end
+	 
+	 
+	 showText = getText(impactText);
+	 showText:setReferencePoint(display.CenterReferencePoint);
+	 showText.x = cCX;
+	 showText.y = cCY - 55;
+	 tr = { time=1000, alpha=0, y = showText.y - 225,
+		xScale = showText.xScale * .25,
+		yScale = showText.yScale * .25,
+		rotation = rand(-45,45), onComplete = killText2,
+	 }
+	 transition.to(showText,tr);
+	 
+	 transition.to(impactLevel, { time=1000, alpha=0, 
+				      xScale = impactLevel.xScale * .25,
+				      yScale = impactLevel.yScale * .25,
+				      y = impactLevel.y + 225,
+				      onComplete = killText});
+	 showTextureMemory();
+      end
+   end
 
    --> Update the score
    function doScore(velocity)
-      score.setScore(score.getScore()+(math.round(velocity / 10)));
+      local tHit = (math.round(velocity / 10));
+      score.setScore(score.getScore()+tHit);
+      
    end
 
    -->Stop and start physics for testing purposes.
@@ -405,6 +549,7 @@ function scene:createScene( event )
 	 --> glove:dispose();
 	 --> Need an impact velocity multiplier
 	 doScore(velocity*impactMult);
+	 showImpactScore(velocity*impactMult, hitLoc);
 	 blast((velocity*impactMult), hitLoc.x);
       end
 
@@ -434,7 +579,6 @@ function scene:createScene( event )
       glove:addEventListener("sprite",killGlove);
       glove:play();
    end
-
 
    --> Primary touch even tracker, everything stems from this.
    function swingEvent(event)
@@ -517,7 +661,8 @@ function scene:createScene( event )
       local scoreLen = string.len( scoreStr )
       local i = 1;
       
-      -- starting location is on the right. notice the digits will be centered on the background
+      -- Starting location is on the right. 
+      -- Notice the digits will be centered on the background
       --local x = 45+theBackgroundBorder;
       local x = -145;
       local y = hsGroup.contentHeight / 2
@@ -540,7 +685,6 @@ function scene:createScene( event )
 	 i = i + 1
       end
    end
-
 
    function startGame(event)
 
@@ -593,7 +737,6 @@ function scene:createScene( event )
       highscoreLabel.x = cCX;
       highscoreLabel.y = cCY+200;
 
-      
       hsGroup = display.newGroup();
       hsGroup.x = cCX; hsGroup.y = cCY+235;
 

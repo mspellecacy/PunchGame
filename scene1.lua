@@ -40,17 +40,15 @@ loadingSprite.y = cCY;
 loadingSprite:prepare("loading");
 loadingSprite:play();
 
-
-
-
-local function killCreditsText(self, event)
-   if event.phase == "began" then
-      self:removeSelf();
-      return true;
-   end
-end
-
 local function onCreditsTouch( self, event )
+
+   local function killCreditsText(self, event)
+      if event.phase == "began" then
+	 self:removeSelf();
+	 return true;
+      end
+   end
+
    if (event.phase == "began") then
       self = display.newImageRect("credits_text.png", cX+5, cY+5);
       self:setReferencePoint(display.CenterReferencePoint);
@@ -60,17 +58,18 @@ local function onCreditsTouch( self, event )
       self:addEventListener("touch", self);
       transition.to(self, {alpha = 1, time=150});
    end
-end
 
-
-local function killHelpText(self, event)
-   if event.phase == "began" then
-      self:removeSelf();
-      return true;
-   end
 end
 
 local function onHelpTouch( self, event )
+
+   local function killHelpText(self, event)
+      if event.phase == "began" then
+	 self:removeSelf();
+	 return true;
+      end
+   end
+
    if (event.phase == "began") then
       self = display.newImageRect("help_text.png", cX+5, cY+5);
       self:setReferencePoint(display.CenterReferencePoint);
@@ -80,6 +79,7 @@ local function onHelpTouch( self, event )
       self:addEventListener("touch", self);
       transition.to(self, {alpha = 1, time=150});
    end
+   
 end
 
 local function onPlayTouch( self, event )
@@ -87,26 +87,17 @@ local function onPlayTouch( self, event )
    function nextScene()
       loadingSprite.x = cCX;
       loadingSprite.y = cCY;
-
-
       --native.setActivityIndicator( true );
       storyboard.gotoScene( "scene2", "fade", 400  );
    end
    
    if event.phase == "began" then
-
-
       self:setFillColor(150);
-
-   --> Setup The Glove
-
       loadingSprite:play();
       timer.performWithDelay(50, nextScene);
       return true
    end
 end
-
-
 
 -- Called when the scene's view does not exist:
 function scene:createScene( event )
@@ -165,8 +156,8 @@ function scene:createScene( event )
 
 	-----------------------------------------------------------------------------
 		
-	--	CREATE display objects and add them to 'group' here.
-	--	Example use-case: Restore 'group' from previously saved state.
+	-- CREATE display objects and add them to 'group' here.
+	-- Example use-case: Restore 'group' from previously saved state.
 	
 	-----------------------------------------------------------------------------
 	
@@ -185,7 +176,7 @@ function scene:enterScene( event )
 	creditsBtn:addEventListener("touch", creditsBtn );
 	-----------------------------------------------------------------------------
 		
-	--	INSERT code here (e.g. start timers, load audio, start listeners, etc.)
+	-- INSERT code here (e.g. start timers, load audio, start listeners, etc.)
 	
 	-----------------------------------------------------------------------------
 	
@@ -200,12 +191,10 @@ function scene:exitScene( event )
 	--playBtn:removeSelf();
 	--helpBtn:removeSelf();
 	--creditsBtn:removeSelf();
-	
-
 
 	-----------------------------------------------------------------------------
 	
-	--	INSERT code here (e.g. stop timers, remove listeners, unload sounds, etc.)
+	-- INSERT code here (e.g. stop timers, remove listeners, unload sounds, etc.)
 	
 	-----------------------------------------------------------------------------
 	
@@ -219,7 +208,7 @@ function scene:destroyScene( event )
    loadingSprite:removeSelf();
 	-----------------------------------------------------------------------------
 	
-	--	INSERT code here (e.g. remove listeners, widgets, save state, etc.)
+	-- INSERT code here (e.g. remove listeners, widgets, save state, etc.)
 	
 	-----------------------------------------------------------------------------
 	

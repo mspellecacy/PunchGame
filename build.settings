@@ -5,7 +5,7 @@ settings =
 	default = "portrait",
 	supported =
 	{
-	"landscapeLeft", "landscapeRight", "portrait", "portraitUpsideDown",
+	"portrait",	
 	}
         },
 	
