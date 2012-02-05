@@ -330,6 +330,12 @@ function scene:createScene( event )
 	 -- This fixes a a bug with letter boxing and stars getting 'stuck' on screen.
 	 hitLoc.y = cY-1;
       end
+
+      if hitLoc.y < 0 then
+	 -- This fixes a a bug with letter boxing and stars getting 'stuck' on screen.
+	 hitLoc.y = 0;
+      end
+
       --> Build some stars
       for i=1,10,1 do 
 	 stars[i] = display.newImageRect("star.png", 45, 45);
@@ -344,32 +350,42 @@ function scene:createScene( event )
 	 --> Randomly select what direction (RU,LU,RD,LD) the star will travel.
 	 starType = rand(1,4);
 	 if(starType == 1) then
-	    --> Down and to the Right
+	    -- Down and to the Right
 	    rT = { x = (hitLoc.x+rand(1,(cX-hitLoc.x))), 
-		   y = (hitLoc.y+rand(1,(cY-hitLoc.y)))};
-	 elseif(starType == 2) then
-	    --> Down and to the Left
-	    rT = { x = (hitLoc.x-rand(1,(cX+hitLoc.x))), 
-		   y = (hitLoc.y+rand(1,(cY-hitLoc.y)))};
-	 elseif(starType == 3) then
-	    --> Up and to the Right
+		   y = (hitLoc.y+rand(1,(cY-hitLoc.y))), 
+		   rotation=rand(1,920), 
+		   time=rand(145,500)}
+	 elseif(starType== 2) then
+	    -- Down and to the Left.
+	    rT = { x = (hitLoc.x-rand(1,hitLoc.x)), 
+		   y = (hitLoc.y+rand(1,(cY-hitLoc.y))), 
+		   rotation=rand(1,920), 
+		   time=rand(145,500)}
+	 elseif(starType== 3) then
+	    -- Up and to the Right.
 	    rT = { x = (hitLoc.x+rand(1,(cX-hitLoc.x))), 
-		   y = (hitLoc.y-rand(1,(cY+hitLoc.y)))};
-	 elseif(starType == 4) then
-	    --> Up and to the Left
-	    rT = { x = (hitLoc.x-rand(1,(cX+hitLoc.x))), 
-		   y = (hitLoc.y-rand(1,(cY+hitLoc.y)))};
+		   y = (hitLoc.y-rand(1,hitLoc.y)), 
+		   rotation=rand(1,920), 
+		   time=rand(145,500)}
+	 elseif(starType== 4) then
+	    -- Up and to the Left.
+	    rT = { x = (hitLoc.x-rand(1,hitLoc.x)), 
+		   y = (hitLoc.y-rand(1,hitLoc.y)), 
+		   rotation=rand(1,920), 
+		   time=rand(145,500)}
 	 end
 
 	 rT.rotation = rand(1,920);
 	 rT.time = rand(145,900);
 	 rT.alpha = 0;
-	 flashRect = display.newRect(0,0,cX+5,cY+5);
-	 flashRect.alpha = 0.05;
-	 flashRect:setFillColor(255,255,255);
-	 transition.to(flashRect,{time=250, alpha=0});
 	 transition.to(stars[i], rT);
       end
+      
+      flashRect = display.newRect(0,0,cX+5,cY+5);
+      flashRect.alpha = 0.25;
+      flashRect:setFillColor(255,255,255);
+      transition.to(flashRect,{time=250, alpha=0});
+      
       --showTextureMemory();
    end
 
